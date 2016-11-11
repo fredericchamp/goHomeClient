@@ -1,1 +1,1 @@
-# go_test
+# Simple HTML/JS Client for goHome server

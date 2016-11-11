@@ -1,0 +1,76 @@
+
+
+body {
+	background-color: white;
+	background-image: url(/images/PlageMoorea.jpg);
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+}
+
+h1 {
+/*	background-color: white;*/
+}
+
+h2 {
+/*	background-color: blue;*/
+}
+
+img.icone{
+	max-width: 50px;
+	max-height: 50px;
+}
+
+table{
+	border: 1px solid blue;
+/*	background-color:#CCCCCC*/
+}
+
+td {
+	text-align: center;
+}
+
+/*
+div.logfile {
+	width: 100%;
+	border: 2px solid black;
+	display: none;
+}
+
+table.std {
+}
+table.std_in {
+	width: 100%;
+}
+
+tr.titre {
+	text-align: center;
+	padding: 20px;
+	padding-top:10px;
+	background-color:#CCCCCC
+}
+*/
+
+td.bouton {
+	width: 100px;
+	border: 2px solid black;
+	font-size: 80%;
+	text-align: center;
+	cursor: pointer;
+}
+
+td.blackbox {
+	border: 2px solid black;
+	text-align: left;
+	padding: 2px;
+}
+
+td.result {
+	font-size: 90%;
+	background-color:#CCCCCC
+	width: 450px;
+}
+
+input.jsonparam {
+	width: 450px;
+}
+

@@ -1,0 +1,134 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<title>goHome</title>
+	<meta name="description" content="goHome">
+	<meta name="viewport" content="width=device-width">
+	<link rel="stylesheet" type="text/css" title="main" href="css/main.css">
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/jquery.json.min.js"></script>
+	
+	<script src="https://unpkg.com/vue/dist/vue.js"></script>
+	
+	<script>
+
+	var vm = {};
+
+	function callServer(action,cmde){
+		$.post("/api",
+		{
+			command:$.toJSON(cmde)
+		},
+		function(data, status){
+			if (action == 1) {
+				vm.actorsList = $.parseJSON(data);
+			} else if (action == 2)  {
+				vm.imgSensorList = $.parseJSON(data);
+			} else if (action == 100)  {
+				alert(cmde.command + '(' + data + ')' );
+			}
+		});
+	};
+
+//	$(function () {
+//	});
+
+
+
+	$(document).ready(function(){
+		var tst1 = [{id:1,val:'un'},{id:2,val:'deux'},{id:3,val:'trois'}];
+		var tst2 = [{id:10,val:'dix'},{id:20,val:'vingt'},{id:30,val:'trente'}];
+		Vue.component('tst-un', {
+			props: ['bidon'],
+			template: '<span v-on:click="bidact" v-bind:id="bidon.id"> {{ bidon.id }} {{ bidon.val }} </span>',
+			methods: {
+				bidact: function (event) {
+					  if (event.target.id < 10) {
+						vm.bidonList = tst2;
+					} else {
+						vm.bidonList = tst1;
+					}
+				}
+			}
+		});
+
+		Vue.component('std-actors', {
+			props: ['actor'],
+			template: '<span v-on:click="actionner" ><img v-bind:id="actor.Values[0].IdObject" v-bind:name="actor.Values[1].Val" v-bind:src="actor.Values[0].Val"  class="icone" /></span>',
+			methods: {
+				actionner: function (event) {
+//	TODO : CONFIRMATION				alert('Actionner ' + event.target.name + ' - ' + event.target.id)
+					callServer(100,{
+						command:'TriggerActor', 
+						itemtypeid:0,
+						itemid:0,
+						objectid:parseInt(event.target.id),
+						startts:0,
+						endts:0,
+						jsonparam:''
+					});
+				}
+			}
+		});
+
+		Vue.component('img-sensor', {
+			props: ['imgsensor'],
+			template: '<span v-on:click="readImg" ><img v-bind:id="imgsensor.Values[0].IdObject" v-bind:name="imgsensor.Values[1].Val" v-bind:src="imgsensor.Values[0].Val"  class="icone" /></span>',
+			methods: {
+				readImg: function (event) {
+					  alert('readImg ' + event.target.name + ' - ' + event.target.id)
+				}
+			}
+		});
+		
+		vm = new Vue({
+			el: '#gohome',
+			data: {
+				bidonList: [],
+				actorsList: [],
+				imgSensorList: []
+			}
+		});
+
+		callServer(1,{
+			command:'ReadObject', 
+			itemtypeid:3,
+			itemid:0,
+			objectid:0,
+			startts:0,
+			endts:0,
+			jsonparam:''
+		});
+		callServer(2,{
+			command:'ReadObject', 
+			itemtypeid:5,
+			itemid:0,
+			objectid:0,
+			startts:0,
+			endts:0,
+			jsonparam:''
+		});
+	});
+	</script>
+</head>
+</head>
+<body>
+<center>
+<h1>Welcome</h1>
+
+<div id="gohome">
+	<std-actors v-for="i in actorsList" v-bind:actor="i"></std-actors>
+	<img-sensor v-for="j in imgSensorList" v-bind:imgsensor="j"></img-sensor>
+	<tst-un v-for="k in bidonList" v-bind:bidon="k"></tst-un>
+</div>
+
+<div id="showImg">
+</div>
+
+
+
+</center>
+</body>
+</html>
+
+
