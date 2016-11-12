@@ -7,6 +7,61 @@ body {
 	background-attachment: fixed;
 }
 
+div.blackbox {
+	border: 2px solid black;
+	text-align: center;
+}
+
+img.icone{
+	width: 50px;
+	max-width: 50px;
+	height: 50px;
+	max-height: 50px;
+}
+
+span.ico {
+    float: left;
+    width: 70px;
+	margin: 10px
+}
+
+
+img.imgloading {
+	position: relative;
+	margin: 40%;
+}
+
+
+img.imgsensor {
+	position: relative;
+	width: 96%;
+	max-width: 96%;
+	max-height: 96%;
+	margin: 2%;
+}
+
+
+div.imgsensor {
+	position: fixed;
+	bottom: 5%;
+	left:5%;
+	width: 90%;
+	height: 90%;
+}
+
+/* --------------------------------------------------------------------------*/
+
+div.test {
+	border: 2px solid red;
+	text-align: left;
+	position: fixed;
+	bottom: 0px;
+	right:0px;
+	padding: 2px;
+}
+
+
+
 h1 {
 /*	background-color: white;*/
 }
@@ -15,62 +70,25 @@ h2 {
 /*	background-color: blue;*/
 }
 
-img.icone{
-	max-width: 50px;
-	max-height: 50px;
+img.imgsensor2 {
+	position: absolute;
+	top:5px;
+	left:5px;
+	width: 960px;
+	max-width: 960px;
+	height: 540px;
+	max-height: 540px;
 }
 
-table{
-	border: 1px solid blue;
-/*	background-color:#CCCCCC*/
+div.imgsensor2 {
+	position: relative;
+	bottom: 20px;
+	width: 970px;
+	height: 550px;
+	margin: auto;
 }
 
-td {
-	text-align: center;
-}
 
-/*
-div.logfile {
-	width: 100%;
-	border: 2px solid black;
-	display: none;
-}
 
-table.std {
-}
-table.std_in {
-	width: 100%;
-}
 
-tr.titre {
-	text-align: center;
-	padding: 20px;
-	padding-top:10px;
-	background-color:#CCCCCC
-}
-*/
-
-td.bouton {
-	width: 100px;
-	border: 2px solid black;
-	font-size: 80%;
-	text-align: center;
-	cursor: pointer;
-}
-
-td.blackbox {
-	border: 2px solid black;
-	text-align: left;
-	padding: 2px;
-}
-
-td.result {
-	font-size: 90%;
-	background-color:#CCCCCC
-	width: 450px;
-}
-
-input.jsonparam {
-	width: 450px;
-}
 

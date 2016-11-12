@@ -5,14 +5,34 @@
 	<meta name="description" content="goHome">
 	<meta name="viewport" content="width=device-width">
 	<link rel="stylesheet" type="text/css" title="main" href="css/main.css">
+	
 	<script type="text/javascript" src="js/jquery.min.js"></script>
 	<script type="text/javascript" src="js/jquery.json.min.js"></script>
-	
 	<script src="https://unpkg.com/vue/dist/vue.js"></script>
 	
 	<script>
 
 	var vm = {};
+
+	function getObjVal(obj,key){
+		var fieldId=0;
+		for (i = 0; i < obj.Fields.length; i++) {
+			if (obj.Fields[i].Name == key) {
+				fieldId = obj.Fields[i].IdField;
+				break;
+			}
+		}
+		if ( fieldId==0 ) {
+			return '';
+		}
+		for (i = 0; i < obj.Values.length; i++) {
+			if (obj.Values[i].IdField == fieldId) {
+				return obj.Values[i].Val;
+			}
+		}
+		return '';
+	};
+
 
 	function callServer(action,cmde){
 		$.post("/api",
@@ -22,6 +42,7 @@
 		function(data, status){
 			if (action == 1) {
 				vm.actorsList = $.parseJSON(data);
+				$("#test").html('<br><br>'+getObjVal(vm.actorsList[0],'Name')+'<br><br>');
 			} else if (action == 2)  {
 				vm.imgSensorList = $.parseJSON(data);
 			} else if (action == 100)  {
@@ -54,10 +75,11 @@
 
 		Vue.component('std-actors', {
 			props: ['actor'],
-			template: '<span v-on:click="actionner" ><img v-bind:id="actor.Values[0].IdObject" v-bind:name="actor.Values[1].Val" v-bind:src="actor.Values[0].Val"  class="icone" /></span>',
+			template: ' <span class="ico" v-bind:id="actor.Values[0].IdObject" v-on:click="actionner" > {{actor.Values[1].Val}} \
+					<img v-bind:id="actor.Values[0].IdObject" v-bind:src="actor.Values[0].Val"  class="icone" /></span>',
 			methods: {
 				actionner: function (event) {
-//	TODO : CONFIRMATION				alert('Actionner ' + event.target.name + ' - ' + event.target.id)
+//	TODO : CONFIRMATION + input param				alert('Actionner ' + event.target.name + ' - ' + event.target.id)
 					callServer(100,{
 						command:'TriggerActor', 
 						itemtypeid:0,
@@ -73,20 +95,42 @@
 
 		Vue.component('img-sensor', {
 			props: ['imgsensor'],
-			template: '<span v-on:click="readImg" ><img v-bind:id="imgsensor.Values[0].IdObject" v-bind:name="imgsensor.Values[1].Val" v-bind:src="imgsensor.Values[0].Val"  class="icone" /></span>',
+			template: ' <span class="ico" v-bind:id="imgsensor.Values[0].IdObject" v-on:click="readImg" > {{imgsensor.Values[1].Val}} \
+					<img v-bind:id="imgsensor.Values[0].IdObject" v-bind:src="imgsensor.Values[0].Val"  class="icone" /></span>',
 			methods: {
 				readImg: function (event) {
-					  alert('readImg ' + event.target.name + ' - ' + event.target.id)
+					var url='/nexus/photo.jpg?x='+Math.random();
+					$("#showLoad").show();
+					$.get(url, {}, function(data, status) { 
+						$("#showLoad").hide(); 
+						$("#showImg").show();
+						vm.imgSensorSrc = url; 
+					});
 				}
 			}
 		});
-		
+
+		Vue.component('img-sensor-show', {
+			props: ['imgsensorsrc'],
+// TODO : Ajouter Titre + Save + X (close)
+			template: ' <div id="showImg" class="imgsensor blackbox" v-on:click="hideImg" ><img v-bind:src="imgsensorsrc" class="imgsensor"/></div>',
+			methods: {
+				hideImg: function (event) {
+					  $("#showImg").hide();
+				},
+				hideLoad: function (event) {
+					  $("#showLoad").hide();
+				}
+			}
+		});
+
 		vm = new Vue({
 			el: '#gohome',
 			data: {
 				bidonList: [],
 				actorsList: [],
-				imgSensorList: []
+				imgSensorList: [],
+				imgSensorSrc:'/images/PlageMoorea.jpg'
 			}
 		});
 
@@ -108,6 +152,9 @@
 			endts:0,
 			jsonparam:''
 		});
+		$("#showLoad").hide();
+		$("#showImg").hide();
+
 	});
 	</script>
 </head>
@@ -119,10 +166,17 @@
 <div id="gohome">
 	<std-actors v-for="i in actorsList" v-bind:actor="i"></std-actors>
 	<img-sensor v-for="j in imgSensorList" v-bind:imgsensor="j"></img-sensor>
+	
+	<img-sensor-show v-bind:imgsensorsrc=imgSensorSrc></img-sensor-show>
+	
 	<tst-un v-for="k in bidonList" v-bind:bidon="k"></tst-un>
+	
 </div>
+<div id="showLoad" class="imgsensor blackbox" onclick='$("#showLoad").hide();' ><img src="/images/loading.gif" class="imgloading"/></div>'
 
-<div id="showImg">
+
+<div id="test" class="test">
+	
 </div>
 
 
