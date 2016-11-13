@@ -89,7 +89,10 @@
 					<img v-bind:id="actor.Values[0].IdObject" v-bind:src="getObjVal(actor,\'ImgFileName\')" class="icone" /></span>',
 			methods: {
 				actionner: function (event) {
-					vm.$messagebox.prompt('Actionner '+ vm.getObjVal(vm.getObjById(vm.actorsList,event.target.id),'Name') + ' ?',{confirmButtonText:'Confirmer',cancelButtonText:'Annuler'}).then(({ value, action }) => {
+					var curActor=vm.getObjById(vm.actorsList,event.target.id);
+					var showI = ( vm.getObjVal(curActor,'DynParamType')  != '0' );
+					var options={confirmButtonText:'Confirmer', cancelButtonText:'Annuler', showInput: showI };
+					vm.$messagebox.prompt('Actionner '+ vm.getObjVal(curActor,'Name') + ' ?',options).then(({ value, action }) => {
 						callServer(100,{
 							command:'TriggerActor', 
 							itemtypeid:0,
@@ -120,7 +123,7 @@
 						$("#showImg").hide();
 					} else {
 						setTimeout(function() { vm.imgSensorSrc = url; }, 100); // For some raison (?) with setTimeout we avoid image caching
-						vm.imgSensorSrc = url;  // TODO sometime the img is not upload/diplay !
+						vm.imgSensorSrc = url;  // TODO sometime the img is not upload/diplay
 					}
 				}
 			}
@@ -131,7 +134,8 @@
 			template: '<div id="showImg" class="imgsensor"><img v-bind:src="imgsensorsrc" class="imgsensor"/><div class="bottomdiv"  v-on:click="hideImg" > Close {{imgsensorsrc}} </div></div>', 
 			methods: {
 				hideImg: function (event) {
-					  $("#showImg").hide();
+					vm.imgSensorSrc = '/images/PlageMoorea.jpg'; 
+					$("#showImg").hide();
 				}
 				// TODO : Save img 
 			}
@@ -146,7 +150,7 @@
 				bidonList: [],
 				actorsList: [],
 				imgSensorList: [],
-				imgSensorSrc: '/images/PlageMoorea.jpg',
+				imgSensorSrc: 'images/PlageMoorea.jpg',
 				curImgSensor:{},
 			},
 			methods: {
