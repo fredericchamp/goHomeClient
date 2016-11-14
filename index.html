@@ -14,36 +14,15 @@
 	<script src="https://unpkg.com/mint-ui/lib/index.js"></script>
 
 	<script>
+	const cReadCurrentUser = 1
+	const cReadActors = 2
+	const cReadImgSensor = 3
+	const cCallActor = 100
 
 	var vm = {};
 
-	function loadAll(){
-		// TODO load User info from server
-
-		// Read actors
-		callServer(1,{
-			command:'ReadObject', 
-			itemtypeid:3,
-			itemid:0,
-			objectid:0,
-			startts:0,
-			endts:0,
-			jsonparam:''
-		});
-
-		// Read img sensors
-		callServer(2,{
-			command:'ReadObject', 
-			itemtypeid:5,
-			itemid:0,
-			objectid:0,
-			startts:0,
-			endts:0,
-			jsonparam:''
-		});
-	};
-
-	function getObjVal(obj,key){
+	function getObjVal(obj,key){ // TODO : REMOVE
+		if ( obj == null ) return '';
 		var fieldId=0;
 		for (i = 0; i < obj.Fields.length; i++) {
 			if (obj.Fields[i].Name == key) {
@@ -69,21 +48,73 @@
 			command:$.toJSON(cmde)
 		},
 		function(data, status){
-			if (action == 1) {
+			switch (action) {
+			case cReadCurrentUser:
+				vm.currentUser = $.parseJSON(data);
+				break;
+			case cReadActors:
 				vm.actorsList = $.parseJSON(data);
-//				$("#test").html('<br><br>'+getObjVal(vm.actorsList[0],'Name')+'<br><br>');
-			} else if (action == 2)  {
+				break;
+			case cReadImgSensor:
 				vm.imgSensorList = $.parseJSON(data);
-			} else if (action == 100)  {
+				break;
+			case cCallActor:
 				vm.$toast(cmde.command + '(' + data + ')' );
+				break;
+			default:
+				vm.$toast('callServer : action inconnue (' + action + ')' );
+				break;
 			}
 		});
 	};
 
 
+	function loadAll(){
+
+		// Read actors
+		callServer(cReadActors,{
+			command:'ReadObject', 
+			itemtypeid:3,
+			itemid:0,
+			objectid:0,
+			startts:0,
+			endts:0,
+			jsonparam:''
+		});
+
+		// Read img sensors
+		callServer(cReadImgSensor,{
+			command:'ReadObject', 
+			itemtypeid:5,
+			itemid:0,
+			objectid:0,
+			startts:0,
+			endts:0,
+			jsonparam:''
+		});
+
+	};
+
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
 	$(document).ready(function(){
 
-		Vue.component('std-actors', {
+		Vue.component('goh-header', {
+			props: ['user'],
+			template: '<mt-header v-bind:title="headertext()"><mt-button icon="back" slot="left"><mt-button icon="more" slot="right"></mt-button></mt-header>',
+			computed: {
+			}, 
+			methods: {
+				reload: function () {
+					window.location.reload(true);
+				},
+				headertext:function () {
+					return "Welcome " + getObjVal(this.user,"FirstName") + ' (' + getObjVal(this.user,"Email") + ')';
+				}
+			}
+		});
+
+		Vue.component('goh-actors', {
 			props: ['actor'],
 			template: ' <span class="ico" v-bind:id="actor.Values[0].IdObject" v-on:click="actionner" >  {{getObjVal(actor,"Name")}} \
 					<img v-bind:id="actor.Values[0].IdObject" v-bind:src="getObjVal(actor,\'ImgFileName\')" class="icone" /></span>',
@@ -93,7 +124,7 @@
 					var showI = ( vm.getObjVal(curActor,'DynParamType')  != '0' );
 					var options={confirmButtonText:'Confirmer', cancelButtonText:'Annuler', showInput: showI };
 					vm.$messagebox.prompt('Actionner '+ vm.getObjVal(curActor,'Name') + ' ?',options).then(({ value, action }) => {
-						callServer(100,{
+						callServer(cCallActor,{
 							command:'TriggerActor', 
 							itemtypeid:0,
 							itemid:0,
@@ -107,7 +138,7 @@
 			}
 		});
 
-		Vue.component('img-sensor', {
+		Vue.component('goh-isensor', {
 			props: ['imgsensor'],
 			template: ' <span class="ico" v-bind:id="imgsensor.Values[0].IdObject" v-on:click="readImg" > {{getObjVal(imgsensor,"Name")}} \
 					<img v-bind:id="imgsensor.Values[0].IdObject" v-bind:src="getObjVal(imgsensor,\'ImgFileName\')"  class="icone" /></span>',
@@ -115,7 +146,6 @@
 				readImg: function (event) {
 					$("#showImg").show();
 					vm.imgSensorSrc = '/images/PlageMoorea2.jpg'; 
-
 					var obj=vm.getObjById(vm.imgSensorList,event.target.id);
 					var url=vm.getObjVal(obj,'Param');
 					if ( url == '' ) {
@@ -129,9 +159,10 @@
 			}
 		});
 
-		Vue.component('img-sensor-show', {
+		Vue.component('goh-isensor-show', {
 			props: ['imgsensorsrc'],
-			template: '<div id="showImg" class="imgsensor"><img v-bind:src="imgsensorsrc" class="imgsensor"/><div class="bottomdiv"  v-on:click="hideImg" > Close {{imgsensorsrc}} </div></div>', 
+			template: ' <div id="showImg" class="imgsensor"  v-on:click="hideImg"><img v-bind:src="imgsensorsrc" class="imgsensor"/>\
+					<div class="imgsensortitle"> {{imgsensorsrc}} </div></div>', 
 			methods: {
 				hideImg: function (event) {
 					vm.imgSensorSrc = '/images/PlageMoorea.jpg'; 
@@ -142,16 +173,49 @@
 		});
 
 
-		// -----------------------------------------------------------------------------------------------------------------------------------------
+		callServer(cReadCurrentUser,{
+			command:'ReadCurrentUser', 
+			itemtypeid:0,
+			itemid:0,
+			objectid:0,
+			startts:0,
+			endts:0,
+			jsonparam:''
+		});
+
+		// Read actors
+		callServer(cReadActors,{
+			command:'ReadObject', 
+			itemtypeid:3,
+			itemid:0,
+			objectid:0,
+			startts:0,
+			endts:0,
+			jsonparam:''
+		});
+
+		// Read img sensors
+		callServer(cReadImgSensor,{
+			command:'ReadObject', 
+			itemtypeid:5,
+			itemid:0,
+			objectid:0,
+			startts:0,
+			endts:0,
+			jsonparam:''
+		});
+
+// -----------------------------------------------------------------------------------------------------------------------------------------
 
 		vm = new Vue({
 			el: '#gohome',
 			data: {
-				bidonList: [],
-				actorsList: [],
-				imgSensorList: [],
+				currentUser: null,
+				actorsList: null,
+				imgSensorList: null,
 				imgSensorSrc: 'images/PlageMoorea.jpg',
 				curImgSensor:{},
+				selected:'1'
 			},
 			methods: {
 				handleClick: function() {
@@ -166,6 +230,7 @@
 					return {Fiels:[], Values:[]};
 				},
 				getObjVal: function(obj,key){
+					if ( obj == null ) return '';
 					var fieldId=0;
 					for (i = 0; i < obj.Fields.length; i++) {
 						if (obj.Fields[i].Name == key) {
@@ -186,28 +251,22 @@
 			}
 		});
 
-
-
-		loadAll();
-
-		$("#showImg").hide();
-
-
 	});
 	</script>
 </head>
 </head>
 <body class="gohome">
 <center>
-<h1 onclick="window.location.reload(true);">Welcome <!-- TODO : add user and app name here --></h1>
-
 <div id="gohome">
 
-	<std-actors v-for="i in actorsList" v-bind:actor="i"></std-actors>
-	<img-sensor v-for="j in imgSensorList" v-bind:imgsensor="j"></img-sensor>
+	<goh-header v-bind:user=currentUser></goh-header>
 
+	<goh-actors v-for="i in actorsList" v-bind:actor="i"></goh-actors>
+	<goh-isensor v-for="j in imgSensorList" v-bind:imgsensor="j"></goh-isensor>
 
-	<img-sensor-show v-bind:imgsensorsrc=imgSensorSrc></img-sensor-show>
+<br><br><br><br><br><br><br><br><br>
+
+	<goh-isensor-show v-bind:imgsensorsrc=imgSensorSrc></goh-isensor-show>
 
 </div>
 
@@ -221,9 +280,6 @@
 
 </center>
 </body>
-
-
-
 </html>
 
 

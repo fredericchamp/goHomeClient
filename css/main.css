@@ -12,19 +12,18 @@ div.blackbox {
 	text-align: center;
 }
 
-img.icone{
-	width: 50px;
-	max-width: 50px;
-	height: 50px;
-	max-height: 50px;
-}
-
 span.ico {
     float: left;
     width: 60px;
 	margin: 10px
 }
 
+img.icone{
+	width: 50px;
+	max-width: 50px;
+	height: 50px;
+	max-height: 50px;
+}
 
 img.imgsensor {
 	position: absolute;
@@ -37,6 +36,7 @@ img.imgsensor {
 
 
 div.imgsensor {
+	display: none;
 	position: fixed;
 	bottom: 6%;
 	left:2%;
@@ -45,13 +45,16 @@ div.imgsensor {
 }
 
 
-div.bottomdiv {
-	background-color: white;
-	position: fixed;
-	bottom: 0;
-	left:2%;
-	width: 96%;
+div.imgsensortitle {
+	position: absolute;
+	width: 100%;
+	bottom:0;
+	left:0;
 	height: 6%;
+	padding:5px;
+	text-align: left;
+	font-size: 2em;
+	color: white;
 }
 
 /* --------------------------------------------------------------------------*/
@@ -74,25 +77,6 @@ h1 {
 h2 {
 /*	background-color: blue;*/
 }
-
-img.imgsensor2 {
-	position: absolute;
-	top:5px;
-	left:5px;
-	width: 960px;
-	max-width: 960px;
-	height: 540px;
-	max-height: 540px;
-}
-
-div.imgsensor2 {
-	position: relative;
-	bottom: 20px;
-	width: 970px;
-	height: 550px;
-	margin: auto;
-}
-
 
 
 
