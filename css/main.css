@@ -12,17 +12,39 @@ div.blackbox {
 	text-align: center;
 }
 
+div.backgr {
+	background-image: url(/images/PlageMoorea.jpg);
+}
+
+div.goh-msg {
+	position: fixed;
+	top:40%;
+	left:25%;
+	width:50%;
+	margin:auto;
+}
+
+div.mainheader {
+	text-align: center;
+    width: 100%;
+	margin: 5px;
+}
+
+a.backtab {
+	color:black;
+}
+
 span.ico {
     float: left;
-    width: 60px;
-	margin: 10px
+    width: 55px;
+	margin: 5px;
 }
 
 img.icone{
-	width: 50px;
-	max-width: 50px;
-	height: 50px;
-	max-height: 50px;
+	width: 45px;
+	max-width: 45px;
+	height: 45px;
+	max-height: 45px;
 }
 
 img.imgsensor {
@@ -36,7 +58,6 @@ img.imgsensor {
 
 
 div.imgsensor {
-	display: none;
 	position: fixed;
 	bottom: 6%;
 	left:2%;
@@ -47,9 +68,9 @@ div.imgsensor {
 
 div.imgsensortitle {
 	position: absolute;
-	width: 100%;
-	bottom:0;
-	left:0;
+	width: 96%%;
+	bottom:4%;
+	left:2%;
 	height: 6%;
 	padding:5px;
 	text-align: left;

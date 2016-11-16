@@ -3,43 +3,26 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 	<title>goHome</title>
 	<meta name="description" content="goHome">
-	<meta name="viewport" content="width=device-width">
+	<meta meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" type="text/css" title="main" href="css/main.css">
+
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 	
 	<script src="js/jquery.min.js"></script>
 	<script src="js/jquery.json.min.js"></script>
 	<script src="js/vue.min.js"></script>
 
-	<link rel="stylesheet" href="https://unpkg.com/mint-ui/lib/style.css">
-	<script src="https://unpkg.com/mint-ui/lib/index.js"></script>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<script src="js/bootstrap.min.js"></script>
+
 
 	<script>
 	const cReadCurrentUser = 1
 	const cReadActors = 2
 	const cReadImgSensor = 3
 	const cCallActor = 100
-
+	
 	var vm = {};
-
-	function getObjVal(obj,key){ // TODO : REMOVE
-		if ( obj == null ) return '';
-		var fieldId=0;
-		for (i = 0; i < obj.Fields.length; i++) {
-			if (obj.Fields[i].Name == key) {
-				fieldId = obj.Fields[i].IdField;
-				break;
-			}
-		}
-		if ( fieldId==0 ) {
-			return '';
-		}
-		for (i = 0; i < obj.Values.length; i++) {
-			if (obj.Values[i].IdField == fieldId) {
-				return obj.Values[i].Val;
-			}
-		}
-		return '';
-	};
 
 
 	function callServer(action,cmde){
@@ -59,10 +42,11 @@
 				vm.imgSensorList = $.parseJSON(data);
 				break;
 			case cCallActor:
-				vm.$toast(cmde.command + '(' + data + ')' );
+				// TODO check if data != '{"error":"....."}'
+				vm.showMessage(cmde.command + '(' + data + ')' ,'alert-success',1500);
 				break;
 			default:
-				vm.$toast('callServer : action inconnue (' + action + ')' );
+				vm.showMessage('callServer : action inconnue (' + action + ')', 'alert-danger',3000);
 				break;
 			}
 		});
@@ -99,40 +83,64 @@
 
 	$(document).ready(function(){
 
-		Vue.component('goh-header', {
-			props: ['user'],
-			template: '<mt-header v-bind:title="headertext()"><mt-button icon="back" slot="left"><mt-button icon="more" slot="right"></mt-button></mt-header>',
+		Vue.component('goh-message', {
+			props: ['gohmsg'],
+			template: '<div :class="msgclass" @click="closemsg">{{ this.gohmsg.message }}</div>',
 			computed: {
+				msgclass:function () { return "alert " + this.gohmsg.msgtype + " goh-msg"; }
 			}, 
 			methods: {
-				reload: function () {
-					window.location.reload(true);
-				},
-				headertext:function () {
-					return "Welcome " + getObjVal(this.user,"FirstName") + ' (' + getObjVal(this.user,"Email") + ')';
-				}
+				closemsg: function () { vm.gohMsg.message=''; }
 			}
 		});
 
+		Vue.component('goh-header', {
+			props: ['user'],
+			template: '<div class="mainheader" @click="reload" >{{headertext}}</div>',
+			computed: {
+				headertext:function () { 
+					return "Welcome " + vm.getObjVal(this.user,"FirstName") + ' (' + vm.getObjVal(this.user,"Email") + ')'; 
+				}
+			}, 
+			methods: {
+				reload: function () { window.location.reload(true); }
+			}
+		});
+
+
 		Vue.component('goh-actors', {
-			props: ['actor'],
-			template: ' <span class="ico" v-bind:id="actor.Values[0].IdObject" v-on:click="actionner" >  {{getObjVal(actor,"Name")}} \
-					<img v-bind:id="actor.Values[0].IdObject" v-bind:src="getObjVal(actor,\'ImgFileName\')" class="icone" /></span>',
+			props: {
+				actor:null,
+				inputparam:''
+			},
+			template: ' <span><button type="button" class="btn btn-default" style="background:none; border:none;" data-toggle="modal" :data-target="modalref">\
+						{{name}}<br><img class="icone" :src="icone"></img></button>\
+						<div :id="modalid" class="modal fade" role="dialog"><div class="modal-dialog"><div class="modal-content">\
+							<div class="modal-header"><h4 class="modal-title">Confirmation</h4></div>\
+							<div class="modal-body">Actionner {{name}}\
+							<span v-if="modalinput"><input type="text" class="form-control" v-model="inputparam"></span></div>\
+							<div class="modal-footer">{{inputparam}} \
+								<button type="button" class="btn btn-default" data-dismiss="modal" @click="actionner">OK</button>\
+								<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>\
+						</div></div></div></div></span>',
+			computed: {
+				id:function () { return this.actor.Values[0].IdObject; },
+				name:function () { return vm.getObjVal(this.actor,"Name"); },
+				icone:function () { return vm.getObjVal(this.actor,"ImgFileName"); },
+				modalid:function () { return "modal_" + this.id ; },
+				modalref:function () { return "#" + this.modalid ; },
+				modalinput:function () { return vm.getObjVal(this.actor,"DynParamType") != '0'; }
+			},
 			methods: {
 				actionner: function (event) {
-					var curActor=vm.getObjById(vm.actorsList,event.target.id);
-					var showI = ( vm.getObjVal(curActor,'DynParamType')  != '0' );
-					var options={confirmButtonText:'Confirmer', cancelButtonText:'Annuler', showInput: showI };
-					vm.$messagebox.prompt('Actionner '+ vm.getObjVal(curActor,'Name') + ' ?',options).then(({ value, action }) => {
-						callServer(cCallActor,{
-							command:'TriggerActor', 
-							itemtypeid:0,
-							itemid:0,
-							objectid:parseInt(event.target.id),
-							startts:0,
-							endts:0,
-							jsonparam:value
-						});
+					callServer(cCallActor,{
+						command:'TriggerActor', 
+						itemtypeid:0,
+						itemid:0,
+						objectid:this.id,
+						startts:0,
+						endts:0,
+						jsonparam:this.inputparam
 					});
 				}
 			}
@@ -140,17 +148,19 @@
 
 		Vue.component('goh-isensor', {
 			props: ['imgsensor'],
-			template: ' <span class="ico" v-bind:id="imgsensor.Values[0].IdObject" v-on:click="readImg" > {{getObjVal(imgsensor,"Name")}} \
-					<img v-bind:id="imgsensor.Values[0].IdObject" v-bind:src="getObjVal(imgsensor,\'ImgFileName\')"  class="icone" /></span>',
+			template: ' <span><button type="button" class="btn btn-default" style="background:none; border:none;" @click="readImg">\
+						{{name}}<br><img class="icone" :src="icone"></img></button></span>',
+			computed: {
+				name:function () { return vm.getObjVal(this.imgsensor,"Name"); },
+				icone:function () { return vm.getObjVal(this.imgsensor,"ImgFileName"); }
+			},
 			methods: {
 				readImg: function (event) {
-					$("#showImg").show();
-					vm.imgSensorSrc = '/images/PlageMoorea2.jpg'; 
-					var obj=vm.getObjById(vm.imgSensorList,event.target.id);
-					var url=vm.getObjVal(obj,'Param');
+					vm.imgSensorSrc = '/images/PlageMoorea2.jpg';
+					var url=vm.getObjVal(this.imgsensor,'Param');
 					if ( url == '' ) {
-						vm.$toast('URL invalide pour Image sensor ' + event.target.id);
-						$("#showImg").hide();
+						vm.showMessage('URL invalide pour Image sensor ' + this.name, 'alert-danger',3000);
+						vm.imgSensorSrc = ''; 
 					} else {
 						setTimeout(function() { vm.imgSensorSrc = url; }, 100); // For some raison (?) with setTimeout we avoid image caching
 						vm.imgSensorSrc = url;  // TODO sometime the img is not upload/diplay
@@ -161,18 +171,17 @@
 
 		Vue.component('goh-isensor-show', {
 			props: ['imgsensorsrc'],
-			template: ' <div id="showImg" class="imgsensor"  v-on:click="hideImg"><img v-bind:src="imgsensorsrc" class="imgsensor"/>\
-					<div class="imgsensortitle"> {{imgsensorsrc}} </div></div>', 
+			template: ' <div class="imgsensor" @click="hideImg">\
+						<img :src="imgsensorsrc" class="imgsensor img-thumbnail"/>\
+						<div class="imgsensortitle"> {{imgsensorsrc}} </div></div>', 
 			methods: {
-				hideImg: function (event) {
-					vm.imgSensorSrc = '/images/PlageMoorea.jpg'; 
-					$("#showImg").hide();
-				}
-				// TODO : Save img 
+				hideImg: function (event) { vm.imgSensorSrc = '';  }
+				// TODO : add button to Save img 
 			}
 		});
 
 
+		// Read current user
 		callServer(cReadCurrentUser,{
 			command:'ReadCurrentUser', 
 			itemtypeid:0,
@@ -213,14 +222,10 @@
 				currentUser: null,
 				actorsList: null,
 				imgSensorList: null,
-				imgSensorSrc: 'images/PlageMoorea.jpg',
-				curImgSensor:{},
-				selected:'1'
+				imgSensorSrc: '',
+				gohMsg:{msgtype:'alert-success',message:''}
 			},
 			methods: {
-				handleClick: function() {
-					this.$toast('Hello world!')
-				},
 				getObjById: function(obj,id){
 					for (i = 0; i < obj.length; i++) {
 						if (obj[i].Values[0].IdObject == id) {
@@ -247,6 +252,17 @@
 						}
 					}
 					return '';
+				},
+				showMessage: function(message,msgtype,delay){
+					if (msgtype!=null && msgtype.length >0) {
+						this.gohMsg.msgtype = msgtype;
+					} else {
+						this.gohMsg.msgtype = 'alert-info';
+					}
+					if (delay!=null && delay >0) {
+						setTimeout(function() { vm.gohMsg.message=''; }, delay);
+					}
+					this.gohMsg.message = message;
 				}
 			}
 		});
@@ -256,29 +272,82 @@
 </head>
 </head>
 <body class="gohome">
-<center>
-<div id="gohome">
 
-	<goh-header v-bind:user=currentUser></goh-header>
+<div id="gohome" class="container" style="width:100%;">
 
-	<goh-actors v-for="i in actorsList" v-bind:actor="i"></goh-actors>
-	<goh-isensor v-for="j in imgSensorList" v-bind:imgsensor="j"></goh-isensor>
 
-<br><br><br><br><br><br><br><br><br>
+	<goh-header :user=currentUser v-if="currentUser!=null"></goh-header>
 
-	<goh-isensor-show v-bind:imgsensorsrc=imgSensorSrc></goh-isensor-show>
+	<div style="width:100%;">
+		<ul class="nav nav-tabs">
+			<li class="active"><a data-toggle="tab" class="backtab" href="#home">Acceuil</a></li>
+			<li><a data-toggle="tab" class="backtab" href="#menu1">Parametres</a></li>
+			<li><a data-toggle="tab" class="backtab" href="#menu2">Adminitration</a></li>
+		</ul>
+
+		<div class="tab-content">
+			<div id="home" class="tab-pane fade in active">
+				<goh-actors v-for="i in actorsList" :actor="i"></goh-actors>
+				<goh-isensor v-for="j in imgSensorList" :imgsensor="j"></goh-isensor>
+			</div>
+			<div id="menu1" class="tab-pane fade">
+				<center> <br><br><br><br><h1> -/- </h1><br><br><br><br></center>
+			</div>
+			<div id="menu2" class="tab-pane fade">
+				<h3>Menu 2</h3>
+				<p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+				<button type="button" class="btn btn-default" onclick="vm.showMessage('example de message',null,1000)">Open Msg</button>
+			</div>
+		</div>
+	</div>
+
+	<goh-message :gohmsg=gohMsg v-if="gohMsg.message!=''"></goh-message>
+	<goh-isensor-show :imgsensorsrc=imgSensorSrc  v-if="imgSensorSrc!=''"></goh-isensor-show>
 
 </div>
 
+
 <!--
+
+<button type="button" class="btn btn-default" data-toggle="modal" data-target="#myModal">Open Msg</button>
+
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Confirmation</h4>
+      </div>
+      <div class="modal-body">
+        Some text in the modal
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal" onclick="alert('OK');">OK</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+	<div class="alert alert-success goh-msg" style="width:50%;margin:auto;">
+		<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+		Indicates a successful or positive action.
+	</div>
+
+	<div class="alert alert-success" style="width:50%;margin:auto;">
+		<i class="material-icons">check</i>Indicates a successful or positive action.
+		<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+	</div>
+
+		<i class="material-icons" style="font-size:60px;color:red;">computer</i>
+
+
 <div id="test" class="test">
 
 </div>
 -->
 
 
-
-</center>
 </body>
 </html>
 
