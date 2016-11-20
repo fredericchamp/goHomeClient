@@ -7,6 +7,12 @@ body.gohome {
 	background-attachment: fixed;
 }
 
+.blackfnt {
+	color:black;
+}
+
+
+
 div.blackbox {
 	border: 1px solid black;
 	text-align: center;
@@ -28,10 +34,6 @@ div.mainheader {
 	text-align: center;
     width: 100%;
 	margin: 5px;
-}
-
-a.backtab {
-	color:black;
 }
 
 span.ico {
