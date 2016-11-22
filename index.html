@@ -5,14 +5,12 @@
 	<meta name="description" content="goHome">
 	<meta meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" type="text/css" title="main" href="css/main.css">
+	<link rel="stylesheet" href="css/bootstrap.min.css">
 
-	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-	
 	<script src="js/jquery.min.js"></script>
 	<script src="js/jquery.json.min.js"></script>
 	<script src="js/vue.min.js"></script>
-
-	<link rel="stylesheet" href="css/bootstrap.min.css">
+	
 	<script src="js/bootstrap.min.js"></script>
 
 	<script>
@@ -25,6 +23,7 @@
 	const cReadSensorVal   =  41;
 	const cReadSensorAct   =  50;
 	const cTriggerActor    = 100;
+	const cSaveObject      = 200;
 
 	const DBTypeNone       = 0;
 	const DBTypeBool       = 1;
@@ -104,9 +103,9 @@
 			gStartup.loadAsk++;
 		}
 		$.post("/api", { command:$.toJSON(cmde) }, function(data, status){
-			// TODO check if data != '{"error":"....."}'
 			switch (action) {
 			case cReadRefList:
+				// TODO check if data != '{"error":"....."}'
 				if ( vm.refList == null ) {
 					vm.refList = new Object();
 				}
@@ -126,12 +125,15 @@
 				vm.refList[curName] = oneList;
 				break;
 			case cReadUsers:
+				// TODO check if data != '{"error":"....."}'
 				vm.userList = $.parseJSON(data);
 				break;
 			case cReadCurrentUser:
+				// TODO check if data != '{"error":"....."}'
 				vm.currentUser = $.parseJSON(data);
 				break;
 			case cReadActors:
+				// TODO check if data != '{"error":"....."}'
 				vm.actorList = $.parseJSON(data);
 				if ( vm.refList == null ) {
 					vm.refList = new Object();
@@ -139,9 +141,11 @@
 				vm.refList['ActorList'] = refListFromNames('ActorList', vm.actorList);
 				break;
 			case cReadImgSensor:
+				// TODO check if data != '{"error":"....."}'
 				vm.imgSensorList = $.parseJSON(data);
 				break;
 			case cReadSensor:
+				// TODO check if data != '{"error":"....."}'
 				vm.sensorList = $.parseJSON(data);
 				for (i = 0; i < vm.sensorList.length; i++) {
 					vm.sensorList[i].Ts='';
@@ -153,6 +157,7 @@
 				vm.refList['SensorList'] = refListFromNames('SensorList', vm.sensorList);
 				break;
 			case cReadSensorVal:
+				// TODO check if data != '{"error":"....."}'
 				var sensorVal = $.parseJSON(data);
 				var sensor = getObjById(vm.sensorList,cmde.objectid);
 				sensor.Ts = sensorVal.Ts;
@@ -160,9 +165,15 @@
 				if (vm.initLoadDone) vm.$forceUpdate();
 				break;
 			case cReadSensorAct:
+				// TODO check if data != '{"error":"....."}'
 				vm.sensorActList = $.parseJSON(data);
 				break;
+			case cSaveObject:
+				// TODO check if data != '{"error":"....."}'
+				// TODO if save fail, read original values from serveur and update corresponding vm.xxxxList to restore valid values
+				break;
 			case cTriggerActor:
+				// TODO check if data != '{"error":"....."}'
 				vm.showMessage(cmde.command + '(' + data + ')' ,'alert-success',1500);
 				break;
 			default:
@@ -327,36 +338,41 @@
 
 
 
-
-		Vue.component('goh-obj-edit-form', {
+		Vue.component('goh-obj-edit-field', {
 			props: {
-				modaltitle: '',
-				fields:null,
-				vals:null
+				field:null,
+				val:null
 			},
-			template: ' <div class="panel panel-default">\
-							<div class="panel-heading">{{modaltitle}}</div>\
-							<div class="panel-body">\
-								<form><span v-for="(field, idx) in fields"  style="font-size: 0.7em;"><div class="form-group">\
-									<label :for="field.Name">{{field.Label}}</label>\
-									<input v-if="(htmlfieldtype(field)==\'input\')"\
-										v-model="vals[field.Name]" :type="getinputtype(field)" :id="field.Name" :placeholder="field.Helper" class="form-control input-sm">\
-									<select v-if="(htmlfieldtype(field)==\'select\')" \
-										v-model="vals[field.Name]" :id="field.Name" :placeholder="field.Helper" class="form-control">\
-										<option v-for="oneVal in vm.refList[field.RefList]" :value="oneVal.Code" >{{oneVal.Label}}</option>\
-									</select>\
-								</div></span></form>\
-							</div>\
-							<div class="panel-footer">\
-								<button type="button" class="btn btn-default" data-dismiss="modal" @click="saveObj">Save</button>\
-								<button type="button" class="btn btn-default" data-dismiss="modal" @click="cancelEdit">Cancel</button>\
+			template: ' <div :id="\'div_\'+field.Name" class="form-group has-feedback">\
+							<label class="col-sm-2 control-label" :for="field.Name"> {{field.Label}} </label>\
+							<div class="col-sm-10">\
+							<span v-if="(htmlfieldtype(field)==\'input\')">\
+								<input v-model="val" :type="getinputtype(field)" :id="field.Name" :placeholder="field.Helper" \
+								@input="checkinput(field,$event.target.value)" class="form-control input-sm">\
+								<span :id="\'ico_\'+field.Name" class="glyphicon form-control-feedback"></span>\
+							</span>\
+							<span v-if="(htmlfieldtype(field)==\'select\')">\
+								<select v-model="val" :id="field.Name" :placeholder="field.Helper" class="form-control">\
+									<option v-for="oneVal in vm.refList[field.RefList]" :value="oneVal.Code" >{{oneVal.Label}}</option>\
+								</select>\
+							</span>\
 							</div>\
 						</div>',
-			computed: {
-				editdivid: function () { return 'objEdit_' + this.vals.IdObject }
-			},
 			methods: {
-				htmlfieldtype(field) {
+				checkinput: function (field,curVal) {
+					if ( field.Regexp != '' ) {
+						console.log(vm.refList[field.Regexp][0].Label);
+						var pattern = new RegExp(vm.refList[field.Regexp][0].Label,"g");
+						if ( pattern.test(curVal) ) {
+							$("#div_"+field.Name).attr("class", 'form-group has-feedback has-success');
+							$("#ico_"+field.Name).attr("class", 'glyphicon form-control-feedback glyphicon-ok');
+						} else {
+							$("#div_"+field.Name).attr("class", 'form-group has-feedback has-error');
+							$("#ico_"+field.Name).attr("class", 'glyphicon form-control-feedback glyphicon-remove');
+						}
+					}
+				},
+				htmlfieldtype: function (field) {
 					switch (field.IdDataType){
 					case DBTypeInt:
 						if ( field.RefList=='' ) return 'input';
@@ -368,31 +384,28 @@
 						return '';
 					}
 				},
-				getinputtype(field) {
-					switch (field.IdDataType){
-					case DBTypeInt: case DBTypeFloat:
+				getinputtype: function (field) {
+					switch (field.IdDataType) {
+					case DBTypeInt:
+					case DBTypeFloat:
 						return 'number';
-						break;
-					case DBTypeText:
-						switch (field.Regexp){
-						case 'email': case 'password': case 'tel': case 'text': case 'url':
+					default:
+						switch (field.Regexp) {
+						case 'email':
+						case 'tel':
+						case 'password':
 							return field.Regexp;
 						default:
 							return 'text';
 						}
-					default :
-						return 'text';
 					}
-				},
-				cancelEdit: function() { ; }, // TODO parent => showmodalform=false;  !!!!! what if click outside modal !!!!!
-				saveObj: function() {  // TODO
-					vm.showMessage('saveObj (' + this.vals.IdObject + ')',null,1500);// TODO parent => showmodalform=false;
 				}
 			}
 		});
 
 
 
+//							<a href="#" class="list-group-item" style="border:0;" data-toggle="modal" :data-target="editdivref">{{name}}</a>\
 
 		Vue.component('goh-admin-obj', {
 			props: {
@@ -401,12 +414,23 @@
 				modaltitle: '',
 				homeobj:null
 			},
-			template: ' <span @click="showmodalform=true;">\
-							<a href="#" class="list-group-item" style="border:0;" data-toggle="modal" :data-target="editdivref">{{name}}</a>\
+			template: ' <li class="list-group-item" @click="showmodalform=true;">\
+							<div data-toggle="modal" :data-target="editdivref"> {{name}}</div>\
 							<div :id="editdivid" class="modal fade" role="dialog"><div class="modal-dialog"><div class="modal-content">\
-								<goh-obj-edit-form v-if="showmodalform==true" :fields="homeobj.Fields" :vals="getEditobj" :modaltitle="modaltitle"></goh-obj-edit-form>\
+								<div v-if="showmodalform==true" class="panel panel-default">\
+									<div class="panel-heading">{{modaltitle}}</div>\
+									<div class="panel-body">\
+										<form class="form-horizontal"><span v-for="(field, idx) in homeobj.Fields"  style="font-size: 0.7em;">\
+											<goh-obj-edit-field :field="field" :val="getEditobj[field.Name]"></goh-obj-edit-field>\
+										</span></form>\
+									</div>\
+									<div class="panel-footer">\
+										<button type="button" class="btn btn-default" data-dismiss="modal" @click="saveObj">Save</button>\
+										<button type="button" class="btn btn-default" data-dismiss="modal" @click="cancelEdit">Cancel</button>\
+									</div>\
+								</div>\
 							</div></div></div>\
-						</span>',
+						</li>',
 			computed: {
 				editdivid: function () { return 'objEdit_' + this.homeobj.Values[0].IdObject; },
 				editdivref: function () { return '#' + this.editdivid },
@@ -435,6 +459,21 @@
 						this.editobj = obj;
 					}
 					return this.editobj;
+				}
+			},
+			methods: {
+				cancelEdit: function() { 
+					this.editobj = null; 
+				},
+				saveObj: function() { 
+					console.log( 'saveObj ' + this.editobj.Name ) ;
+					// if form validation
+					for ( idx = 0; idx < this.homeobj.Fields.length; idx++ ) {
+						this.homeobj.Values[idx].Val = this.editobj[this.homeobj.Fields[idx].Name]
+					}
+					// SaveObject
+					callServer(cSaveObject,{ command:'SaveObject', itemtypeid:0, itemid:0, objectid:0, startts:0, endts:0, 
+						jsonparam: $.toJSON(this.homeobj) });
 				}
 			}
 		});
@@ -548,7 +587,9 @@
 							<h4 class="panel-title">Sensors</h4>
 						</div>
 					<div id="admin_sensor" class="panel-collapse collapse">
-						<div class="panel-body"><goh-admin-obj v-for="i in sensorList" :homeobj="i" modaltitle="Sensor"></goh-admin-obj></div>
+						<div class="panel-body"><ul class="list-group">
+							<goh-admin-obj v-for="i in sensorList" :homeobj="i" modaltitle="Sensor"></goh-admin-obj>
+						</ul></div>
 					</div>
 				</div>
 				<div class="panel panel-default">
@@ -556,9 +597,9 @@
 						<h4 class="panel-title">Triggers</h4>
 					</div>
 					<div id="admin_sensor_act" class="panel-collapse collapse">
-						<div class="panel-body">
+						<div class="panel-body"><ul class="list-group">
 							<goh-admin-obj v-for="i in sensorActList" :homeobj="i" modaltitle="Triggers"></goh-admin-obj>
-						</div>
+						</ul></div>
 					</div>
 				</div>
 				<div class="panel panel-default">
@@ -566,7 +607,9 @@
 						<h4 class="panel-title">Actors</h4>
 					</div>
 					<div id="admin_actor" class="panel-collapse collapse">
-						<div class="panel-body"><goh-admin-obj v-for="i in actorList" :homeobj="i" modaltitle="Actor"></goh-admin-obj></div>
+						<div class="panel-body"><ul class="list-group">
+							<goh-admin-obj v-for="i in actorList" :homeobj="i" modaltitle="Actor"></goh-admin-obj>
+						</ul></div>
 					</div>
 				</div>
 				<div class="panel panel-default">
@@ -574,7 +617,9 @@
 						<h4 class="panel-title">Image Sensors</h4>
 					</div>
 					<div id="admin_isensor" class="panel-collapse collapse">
-						<div class="panel-body"><goh-admin-obj v-for="i in imgSensorList" :homeobj="i" modaltitle="Image Sensors"></goh-admin-obj></div>
+						<div class="panel-body"><ul class="list-group">
+							<goh-admin-obj v-for="i in imgSensorList" :homeobj="i" modaltitle="Image Sensors"></goh-admin-obj>
+						</ul></div>
 					</div>
 				</div>
 				<div class="panel panel-default">
@@ -582,9 +627,9 @@
 						<h4 class="panel-title">Users</h4>
 					</div>
 					<div id="admin_other" class="panel-collapse collapse">
-						<div class="panel-body">
+						<div class="panel-body"><ul class="list-group">
 							<goh-admin-obj v-for="i in userList" :homeobj="i" modaltitle="User"></goh-admin-obj>
-						</div>
+						</ul></div>
 					</div>
 				</div>
 				<br>
@@ -614,9 +659,15 @@
 	<div class="modal-header">
 		<h4 class="modal-title">TEST MODAL</h4>
 	</div><div class="modal-body">
-		<div v-for="(oneLst, key) in vm.refList"><h3>-{{key}}-</h3></a>
-			<div v-for="oneVal in vm.refList[key]">+{{oneVal}}+<br></div>
+	<form class="form-horizontal">
+		<div class="form-group has-error has-feedback">
+			<label class="control-label" for="inputError">Input with error and glyphicon</label>
+			<div>
+				<input type="text" class="form-control" id="inputError">
+				<span class="glyphicon glyphicon-remove form-control-feedback"></span>
+			</div>
 		</div>
+	</form>
 	</div><div class="modal-footer">
 		<button type="button" class="btn btn-default" data-dismiss="modal" onclick="alert('OK');">Save</button>
 		<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
