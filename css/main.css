@@ -36,6 +36,24 @@ div.mainheader {
 	margin: 5px;
 }
 
+div.gray-out-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.5);
+}
+div.form-panel {
+    position: fixed;
+    top: 30;
+    left: 10%;
+    width: 80%;
+    z-index: 51;
+    opacity: 1;
+}
+
 span.ico {
     float: left;
     width: 55px;
