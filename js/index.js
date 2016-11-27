@@ -1,4 +1,6 @@
+
 const cReadRefList     =   1;
+const cReadItem        =   2;
 const cReadUsers       =  10;
 const cReadCurrentUser =  11;
 const cReadActors      =  20;
@@ -22,6 +24,8 @@ var gStartup            = { startup:true, loadAsk:0, loadGot:0 } ;
 
 var vm = {};
 
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
 function htmlEncode(str) {
     var result = "";
     var str = (arguments.length===1) ? str : this;
@@ -34,9 +38,38 @@ function htmlEncode(str) {
 
 // -----------------------------------------------------------------------------------------------------------------------------------------
 
+function showMessage(message,msgtype,delay){
+    curClass = 'panel panel-info goh-msg';
+    if ( msgtype != null && msgtype.length > 0) {
+        curClass = 'panel panel-' + msgtype + " goh-msg" ;
+    }
+    if (delay!=null && delay >0) {
+        setTimeout(function() { $('#gohMessage').attr("class", "hide" ); }, delay);
+    }
+    $('#gohMessage').attr("class", curClass ) ;
+    $('#gohMessageText').html(message);
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
+function refListGetVal( refList, lstname, code ) {
+    if ( refList == null ) return '';
+    var i = 0;
+    for (i = 0; i < refList[lstname].length; i++) {
+        if ( refList[lstname][i].Code == code ) {
+            return refList[lstname][i].Label;
+        }
+    }
+    return '';
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
 function refListFromNames( listName, objList ) {
     var refList = new Array();
-    var nameIdx = 0
+    if ( objList == null ) return refList;
+    var nameIdx = 0;
+    var i = 0;
     for (i = 0; i < objList[0].Fields.length; i++) {
         if ( objList[0].Fields[i].Name == 'Name' ) {
             nameIdx = i; // TODO should use IdField rather than index
@@ -51,17 +84,55 @@ function refListFromNames( listName, objList ) {
 
 // -----------------------------------------------------------------------------------------------------------------------------------------
 
-function getObjById(obj,id){
-    for (i = 0; i < obj.length; i++) {
-        if (obj[i].Values[0].IdObject == id) {
-            return obj[i];
+function getItemById( itemList, itemId ) {
+    if ( itemList == null ) return null;
+    var i = 0;
+    for (i = 0; i < itemList.length; i++) {
+        if ( itemList[i].IdItem == itemId ) {
+            return itemList[i];
         }
     }
-    return {Fiels:[], Values:[]};
+    return null;
+}
+
+function getItemNameById( itemList, itemId ) {
+    var item = getItemById( itemList, itemId )
+    if ( item == null ) {
+        return "IdItem_" + itemId;
+    }
+    return item.Name;
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
+function newHomeObject(obj) {
+    if ( obj == null ) return null;
+    var newObj = new Object();
+    newObj.Fields = obj.Fields;
+    newObj.Values = new Array();
+    var i;
+    for (i = 0; i < newObj.Fields.length; i++) {
+        newObj.Values.push( {IdObject:0, IdField:newObj.Fields[i].IdField, Val:''} );
+    }
+    return newObj;
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
+function getObjById(objs,id){
+    if ( objs == null ) return null;
+    var i = 0;
+    for (i = 0; i < objs.length; i++) {
+        if (objs[i].Values[0].IdObject == id) {
+            return objs[i];
+        }
+    }
+    return null;
 }
 
 function getObjVal(obj,key){
     if ( obj == null ) return '';
+    var i = 0;
     var fieldId=0;
     for (i = 0; i < obj.Fields.length; i++) {
         if (obj.Fields[i].Name == key) {
@@ -80,9 +151,61 @@ function getObjVal(obj,key){
     return '';
 }
 
+function searchObjByVal(objLst,itemId,objId,key,val){
+    if ( objLst == null ) return null;
+    var x=0;
+    for (x = 0; x < objLst.length; x++) {
+        if ( objLst[x].Fields[0].IdItem != itemId ) {
+            continue;
+        }
+        if ( objLst[x].Values[0].IdObject == objId ) {
+            continue;
+        }
+        if ( getObjVal(objLst[x],key) == val) {
+            return objLst[x];
+        }
+    }
+    return null;
+}
+
 // -----------------------------------------------------------------------------------------------------------------------------------------
 
-function callServer(action,cmde){
+function getReadForItemId( itemId ) {
+    switch (itemId) {
+    case 1: return cReadUsers;
+    case 2: return cReadSensor;
+    case 3: return cReadActors;
+    case 4: return cReadSensorAct;
+    case 5: return cReadImgSensor;
+    default:return 0;
+    }
+}
+
+function getItemIdForRead( action ) {
+    switch (action) {
+    case cReadUsers:     return 1;
+    case cReadSensor:    return 2;
+    case cReadActors:    return 3;
+    case cReadSensorAct: return 4;
+    case cReadImgSensor: return 5;
+    default :            return 0;
+    }
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
+function readObjectLst( action, forceRefresh ) {
+   var itemId = getItemIdForRead( action );
+    if ( itemId <= 0 ) {
+        // TODO ERROR unknown itemId or action
+        return;
+    }
+    callServer(action,forceRefresh,{ command:'ReadObject', itemid:itemId, objectid:0, startts:0, endts:0, jsonparam:'' });
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
+function callServer(action,forceRefresh,cmde){
     if ( gStartup.startup ) {
         gStartup.loadAsk++;
     }
@@ -107,6 +230,10 @@ function callServer(action,cmde){
                 }
             }
             vm.refList[curName] = oneList;
+            break;
+        case cReadItem:
+            // TODO check if data != '{"error":"....."}'
+            vm.itemList = $.parseJSON(data);
             break;
         case cReadUsers:
             // TODO check if data != '{"error":"....."}'
@@ -146,7 +273,6 @@ function callServer(action,cmde){
             var sensor = getObjById(vm.sensorList,cmde.objectid);
             sensor.Ts = sensorVal.Ts;
             sensor.Val = sensorVal.Val;
-            if (vm.initLoadDone) vm.$forceUpdate();
             break;
         case cReadSensorAct:
             // TODO check if data != '{"error":"....."}'
@@ -154,19 +280,26 @@ function callServer(action,cmde){
             break;
         case cSaveObject:
             // TODO check if data != '{"error":"....."}'
-            // TODO if save fail, read original values from serveur and update corresponding vm.xxxxList to restore valid values
+            // TODO if save fail, read original values from server and update corresponding vm.xxxxList to restore valid values ... or reload page :-)
+            if ( forceRefresh ) {
+                setTimeout(function() { readObjectLst( getReadForItemId(cmde.itemid), forceRefresh ); }, 1500);
+                forceRefresh = false;
+            }
             break;
         case cTriggerActor:
             // TODO check if data != '{"error":"....."}'
-            vm.showMessage(cmde.command + '(' + data + ')' ,'alert-success',1500);
+            showMessage(cmde.command + '(' + data + ')' ,'success',1500);
             break;
         default:
-            vm.showMessage('callServer : action inconnue (' + action + ')', 'alert-danger',3000);
+            showMessage('callServer : action inconnue (' + action + ')', 'danger',3000);
             break;
         }
         gStartup.loadGot++;
         if (gStartup.startup==false && gStartup.loadAsk <= gStartup.loadGot) {
             vm.initLoadDone=true;
+        }
+        if ( forceRefresh ) {
+            vm.$forceUpdate();
         }
     });
 }
@@ -174,20 +307,6 @@ function callServer(action,cmde){
 // -----------------------------------------------------------------------------------------------------------------------------------------
 
 $(document).ready(function(){
-
-
-
-    Vue.component('goh-message', {
-        props: ['gohmsg'],
-        template: '<div :class="msgclass" @click="closemsg">{{ this.gohmsg.message }}</div>',
-        computed: {
-            msgclass:function () { return "alert " + this.gohmsg.msgtype + " goh-msg"; }
-        },
-        methods: {
-            closemsg: function () { this.gohmsg.message=''; }
-        }
-    });
-
 
 
 
@@ -236,7 +355,7 @@ $(document).ready(function(){
         },
         methods: {
             actionner: function (event) {
-                callServer(cTriggerActor,{ command:'TriggerActor', itemtypeid:0, itemid:0, objectid:this.id, startts:0, endts:0, jsonparam:this.inputparam });
+                callServer(cTriggerActor,false,{ command:'TriggerActor', itemid:0, objectid:this.id, startts:0, endts:0, jsonparam:this.inputparam });
             }
         }
     });
@@ -248,18 +367,14 @@ $(document).ready(function(){
         props: ['imgsensor'],
         template: ' <span>\
                         <button type="button" class="btn btn-link" style="background:none; width:100px; color:black;" @click="readImg">\
-                        {{name}}<br><img class="icone" :src="icone"></img></button>\
+                        {{getObjVal(imgsensor,"Name")}}<br><img class="icone" :src="getObjVal(imgsensor,\'ImgFileName\')"></img></button>\
                     </span>',
-        computed: {
-            name:function () { return getObjVal(this.imgsensor,"Name"); },
-            icone:function () { return getObjVal(this.imgsensor,"ImgFileName"); }
-        },
         methods: {
             readImg: function (event) {
                 vm.imgSensorSrc = '/images/PlageMoorea2.jpg';
                 var url=getObjVal(this.imgsensor,'Param');
                 if ( url == '' ) {
-                    vm.showMessage('URL invalide pour Image sensor ' + this.name, 'alert-danger',3000);
+                    showMessage('URL invalide pour Image sensor ' + getObjVal(this.imgsensor,"Name"), 'danger',3000);
                     vm.imgSensorSrc = '';
                 } else {
                     // For some raison (?) with setTimeout we avoid image caching
@@ -296,11 +411,9 @@ $(document).ready(function(){
             readdate: ''
         },
         template: ' <tr @click="updateval">\
-                    <td>{{id}}</td><td>{{name}}</td><td>{{readvalue}}</td><td>{{showdate}}</td>\
+                    <td>{{sensor.Values[0].IdObject}}</td><td>{{getObjVal(sensor,"Name")}}</td><td>{{readvalue}}</td><td>{{showdate}}</td>\
                     </tr>',
         computed: {
-            id:function () { return this.sensor.Values[0].IdObject; },
-            name:function () { return getObjVal(this.sensor,"Name"); },
             showdate:function () {
                 if (this.readdate == 0) {
                     this.updateval();
@@ -315,7 +428,8 @@ $(document).ready(function(){
         },
         methods: {
             updateval: function () {
-                callServer(cReadSensorVal,{command:'ReadSensor', itemtypeid:0, itemid:0, objectid:this.id, startts:0, endts:0, jsonparam:''});
+                var objid=this.sensor.Values[0].IdObject;
+                callServer(cReadSensorVal,true,{command:'ReadSensor', itemid:0, objectid:objid, startts:0, endts:0, jsonparam:''});
             }
         }
     });
@@ -332,24 +446,25 @@ $(document).ready(function(){
                         <div class="col-sm-10">\
                             <span v-if="(htmlfieldtype(field)==\'input\')">\
                                 <input v-model="vals[field.Name]" :type="getinputtype(field)" :id="field.Name" :placeholder="field.Helper" \
-                                @input="checkinput(field,$event.target.value)" class="form-control input-sm">\
+                                @input="isvalid(field,$event.target.value)" class="form-control input-sm">\
                                 <span :id="\'ico_\'+field.Name" class="glyphicon form-control-feedback"></span>\
                             </span>\
                             <span v-if="(htmlfieldtype(field)==\'select\')">\
-                                <select v-model="vals[field.Name]" :id="field.Name" :placeholder="field.Helper" class="form-control">\
+                                <select v-model="vals[field.Name]" :id="field.Name" @input="isvalid(field,$event.target.value)" :placeholder="field.Helper" class="form-control">\
                                     <option v-for="oneVal in vm.refList[field.RefList]" :value="oneVal.Code" >{{oneVal.Label}}</option>\
                                 </select>\
                             </span>\
                         </div>\
                     </div>',
         mounted: function () {
-            this.checkinput(this.field,this.vals[this.field.Name]);
+            this.isvalid(this.field,this.vals[this.field.Name]);
         },
         methods: {
-            checkinput: function (field,curVal) {
+            isvalid: function (field,curVal) {
                 if ( field.Required  != '0' && curVal == '' ) {
                     $("#div_"+field.Name).attr("class", 'form-group has-feedback has-error');
                     $("#ico_"+field.Name).attr("class", 'glyphicon form-control-feedback glyphicon-remove');
+                    this.vals["_v_"+field.Name] = false;
                     return false;
                 }
                 if ( field.Regexp != '' ) {
@@ -357,6 +472,7 @@ $(document).ready(function(){
                     if ( !pattern.test(curVal) ) {
                         $("#div_"+field.Name).attr("class", 'form-group has-feedback has-error');
                         $("#ico_"+field.Name).attr("class", 'glyphicon form-control-feedback glyphicon-remove');
+                        this.vals["_v_"+field.Name] = false;
                         return false;
                     }
                 }
@@ -364,13 +480,40 @@ $(document).ready(function(){
                     if ( curVal == '' ) {
                         $("#div_"+field.Name).attr("class", 'form-group has-feedback has-error');
                         $("#ico_"+field.Name).attr("class", 'glyphicon form-control-feedback glyphicon-remove');
+                        this.vals["_v_"+field.Name] = false;
                         return false;
                     } else {
-                        // TODO check uniqueness of curVal within all field.Name values for same field.IdItem and <> IdObject
+                        var find = false;
+                        switch (field.IdItem) {
+                        case vm.userList[0].Fields[0].IdItem:
+                            find = (searchObjByVal(vm.userList,field.IdItem,this.vals.IdObject,field.Name,curVal) != null) ;
+                            break;
+                        case vm.actorList[0].Fields[0].IdItem:
+                            find = (searchObjByVal(vm.actorList,field.IdItem,this.vals.IdObject,field.Name,curVal) != null) ;
+                            break;
+                        case vm.sensorList[0].Fields[0].IdItem:
+                            find = (searchObjByVal(vm.sensorList,field.IdItem,this.vals.IdObject,field.Name,curVal) != null) ;
+                            break;
+                        case vm.sensorActList[0].Fields[0].IdItem:
+                            find = (searchObjByVal(vm.sensorActList,field.IdItem,this.vals.IdObject,field.Name,curVal) != null) ;
+                            break;
+                        case vm.imgSensorList[0].Fields[0].IdItem:
+                            find = (searchObjByVal(vm.imgSensorList,field.IdItem,this.vals.IdObject,field.Name,curVal) != null) ;
+                            break;
+                        default:
+                            find = false ;
+                        }
+                        if ( find ) {
+                            $("#div_"+field.Name).attr("class", 'form-group has-feedback has-error');
+                            $("#ico_"+field.Name).attr("class", 'glyphicon form-control-feedback glyphicon-remove');
+                            this.vals["_v_"+field.Name] = false;
+                            return false;
+                        }
                     }
                 }
                 $("#div_"+field.Name).attr("class", 'form-group has-feedback has-success');
                 $("#ico_"+field.Name).attr("class", 'glyphicon form-control-feedback glyphicon-ok');
+                this.vals["_v_"+field.Name] = true;
                 return true;
             },
             htmlfieldtype: function (field) {
@@ -410,14 +553,15 @@ $(document).ready(function(){
         props: {
             showmodalform:false,
             editobj:null,
-            modaltitle: '',
             homeobj:null
         },
-        template: ' <li class="list-group-item">\
-                        <div @click="showmodalform=true;"> {{name}} </div>\
+        template: ' <li class="list-group-item" style="padding:0px;">\
+                        <div @click="showmodalform=true;" style="padding:5px;">\
+                            <span v-if="homeobj.Values[0].IdObject == 0" class="glyphicon glyphicon-plus"></span> {{name}}\
+                        </div>\
                         <div class="gray-out-page" v-if="showmodalform==true"><div class="form-panel">\
                             <div class="panel panel-default">\
-                                <div class="panel-heading">{{modaltitle}}</div>\
+                                <div class="panel-heading">{{itemidname}}</div>\
                                 <div class="panel-body">\
                                     <form class="form-horizontal"><span v-for="(field, idx) in homeobj.Fields"  style="font-size: 0.7em;">\
                                         <goh-obj-edit-field :field="field" :vals="getEditobj"></goh-obj-edit-field>\
@@ -431,8 +575,14 @@ $(document).ready(function(){
                         </div></div>\
                     </li>',
         computed: {
+            itemidname: function () {
+                return getItemNameById( vm.itemList, this.homeobj.Fields[0].IdItem );
+            },
             name:function () {
                 var name = getObjVal(this.homeobj,"Name");
+                if ( name == '' && this.homeobj.Values[0].IdObject == 0 ) {
+                    name = 'New ' + this.itemidname ;
+                }
                 if ( name == '' && getObjVal(this.homeobj,"FirstName") != '' ) {
                     name = getObjVal(this.homeobj,"FirstName") + ' ' + getObjVal(this.homeobj,"LastName") + ' (' + getObjVal(this.homeobj,"Email") + ')';
                 }
@@ -464,39 +614,88 @@ $(document).ready(function(){
 				this.showmodalform=false;
             },
             saveObj: function() {
-                // TODO if form validation OK
+                for ( idx = 0; idx < this.homeobj.Fields.length; idx++ ) {
+                    if ( this.editobj["_v_"+this.homeobj.Fields[idx].Name] == false ) {
+                        showMessage('<center><br><br>Bad value(s)</br></br></br></center>', 'danger',3000);
+                        return;
+                    }
+                }
                 for ( idx = 0; idx < this.homeobj.Fields.length; idx++ ) {
                     this.homeobj.Values[idx].Val = this.editobj[this.homeobj.Fields[idx].Name]
                 }
                 // SaveObject
-                callServer(cSaveObject,{ command:'SaveObject', itemtypeid:0, itemid:0, objectid:0, startts:0, endts:0,
-                    jsonparam: $.toJSON(this.homeobj) });
+                callServer(cSaveObject, (this.homeobj.Values[0].IdObject == '0'),
+                    { command:'SaveObject', itemid:this.homeobj.Fields[0].IdItem, objectid:0, startts:0, endts:0,
+                        jsonparam: $.toJSON(this.homeobj) });
+
 				this.showmodalform=false;
             }
         }
     });
 
 
+
+
+    Vue.component('goh-admin-tab', {
+        props: {
+            objlist:null
+        },
+        template: ' <div class="panel panel-default">\
+                        <div class="panel-heading" data-toggle="collapse" data-parent="#admin_list" :data-target="\'#\'+divid">\
+                            <h4 class="panel-title">{{itemidname}}</h4>\
+                        </div>\
+                        <div :id="divid" class="panel-collapse collapse">\
+                            <div class="panel-body">\
+                                <ul class="list-group">\
+                                    <goh-admin-obj v-for="i in objlist" :homeobj="i" ></goh-admin-obj>\
+                                    <goh-admin-obj :homeobj="homeobj" ></goh-admin-obj>\
+                                </ul>\
+                            </div>\
+                        </div>\
+                    </div>',
+        computed: {
+            itemidname: function () {
+                if ( this.objlist == null ) return 'lst null';
+                if ( this.objlist[0].Fields == null ) return 'fields null';
+                return getItemNameById( vm.itemList, this.objlist[0].Fields[0].IdItem );
+            },
+            divid: function() {
+                return 'admin_' + this.itemidname.replace(/ /g,"_");
+            },
+            homeobj: function() {
+                if ( this.objlist == null ) return null;
+                return newHomeObject(this.objlist[0])
+            }
+        }
+    });
+
 // -----------------------------------------------------------------------------------------------------------------------------------------
 
 
     // Read Reference lists
-    callServer(cReadRefList,{ command:'ReadRefList', itemtypeid:0, itemid:0, objectid:0, startts:0, endts:0, jsonparam:'%' });
+    callServer(cReadRefList, false, { command:'ReadRefList', itemid:0, objectid:0, startts:0, endts:0, jsonparam:'%' });
+    // Read Item definition
+    callServer(cReadItem, false, { command:'ReadItem', itemid:0, objectid:0, startts:0, endts:0, jsonparam:'' });
     // Read current user
-    callServer(cReadCurrentUser,{ command:'ReadCurrentUser', itemtypeid:0, itemid:0, objectid:0, startts:0, endts:0, jsonparam:'' });
+    callServer(cReadCurrentUser, false, { command:'ReadCurrentUser', itemid:0, objectid:0, startts:0, endts:0, jsonparam:'' });
+
     // Read actors
-    callServer(cReadActors,{ command:'ReadObject', itemtypeid:3, itemid:0, objectid:0, startts:0, endts:0, jsonparam:'' });
+    readObjectLst(cReadActors, false);
+
     // Read img sensors
-    callServer(cReadImgSensor,{ command:'ReadObject', itemtypeid:5, itemid:0, objectid:0, startts:0, endts:0, jsonparam:'' });
+    readObjectLst(cReadImgSensor, false);
 
     gStartup.startup = false;
 
     // Read users
-    callServer(cReadUsers,{ command:'ReadObject', itemtypeid:1, itemid:0, objectid:0, startts:0, endts:0, jsonparam:'' });
+    readObjectLst(cReadUsers, false);
+
     // Read sensors
-    callServer(cReadSensor,{ command:'ReadObject', itemtypeid:2, itemid:0, objectid:0, startts:0, endts:0, jsonparam:'' });
+    readObjectLst(cReadSensor, false);
+
     // Read sensorAct i.e. actors trigger by sensor reading
-    callServer(cReadSensorAct,{ command:'ReadObject', itemtypeid:4, itemid:0, objectid:0, startts:0, endts:0, jsonparam:'' });
+    readObjectLst(cReadSensorAct, false);
+
 
 
 // -----------------------------------------------------------------------------------------------------------------------------------------
@@ -507,27 +706,29 @@ $(document).ready(function(){
         data: {
             initLoadDone: false,
             refList: null,
+            itemList: null,
             currentUser: null,
             userList: null,
             actorList: null,
             sensorList: null,
             sensorActList : null,
             imgSensorList: null,
-            imgSensorSrc: '',
-            gohMsg:{msgtype:'alert-success',message:''}
+            imgSensorSrc: ''
         },
         methods: {
             showMessage: function(message,msgtype,delay){
-                if (msgtype!=null && msgtype.length >0) {
-                    this.gohMsg.msgtype = msgtype;
-                } else {
-                    this.gohMsg.msgtype = 'alert-info';
+                console.log( 'vm.showMessage = empty' );
+            },
+            objectListForItemId(itemId) {
+                switch (itemId) {
+                case 1: return this.userList;
+                case 2: return this.sensorList;
+                case 3: return this.actorList;
+                case 4: return this.sensorActList;
+                case 5: return this.imgSensorList;
+                default:return [];
                 }
-                if (delay!=null && delay >0) {
-                    setTimeout(function() { this.gohMsg.message=''; }, delay);
-                }
-                this.gohMsg.message = message;
-            }
+           }
         },
         watch: {
             imgSensorList: function(val) { ; } //alert('imgSensorList'); }

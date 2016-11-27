@@ -10,12 +10,11 @@
 	<script src="js/jquery.min.js"></script>
 	<script src="js/jquery.json.min.js"></script>
 	<script src="js/vue.min.js"></script>
-
 	<script src="js/bootstrap.min.js"></script>
 
 	<script src="js/index.js"></script>
 </head>
-</head>
+
 <body class="gohome">
 
 <div id="gohome" class="container" style="width:100%;">
@@ -26,6 +25,8 @@
 		</script>
 	</div>
 	<div v-else>
+
+<!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
 		<goh-header :user=currentUser></goh-header>
 
@@ -38,14 +39,14 @@
 
 			<div class="tab-content">
 
-	<!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
+<!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
 				<div id="menu1" class="tab-pane fade in active"><br>
 					<goh-actors v-for="i in actorList" :actor="i"></goh-actors>
 					<goh-isensor v-for="j in imgSensorList" :imgsensor="j"></goh-isensor>
 				</div>
 
-	<!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
+<!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
 				<div id="menu2" class="tab-pane fade">
 					<div class="table-responsive"><table class="table">
@@ -54,63 +55,12 @@
 					</tbody></table></div> <!-- TODO ignore inactive sensor -->
 				</div>
 
-	<!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
+<!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
 				<div id="menu3" class="tab-pane fade">
 					<br>
 					<div class="panel-group" id="admin_list">
-						<div class="panel panel-default">
-							<div class="panel-heading" data-toggle="collapse" data-parent="#admin_list" data-target="#admin_sensor">
-								<h4 class="panel-title">Sensors</h4>
-							</div>
-							<div id="admin_sensor" class="panel-collapse collapse">
-								<div class="panel-body"><ul class="list-group">
-									<goh-admin-obj v-for="i in sensorList" :homeobj="i" modaltitle="Sensor"></goh-admin-obj>
-								</ul></div>
-							</div>
-						</div>
-						<div class="panel panel-default">
-							<div class="panel-heading" data-toggle="collapse" data-parent="#admin_list" data-target="#admin_sensor_act">
-								<h4 class="panel-title">Triggers</h4>
-							</div>
-							<div id="admin_sensor_act" class="panel-collapse collapse">
-								<div class="panel-body"><ul class="list-group">
-									<goh-admin-obj v-for="i in sensorActList" :homeobj="i" modaltitle="Triggers"></goh-admin-obj>
-								</ul></div>
-							</div>
-						</div>
-						<div class="panel panel-default">
-							<div class="panel-heading" data-toggle="collapse" data-parent="#admin_list" data-target="#admin_actor">
-								<h4 class="panel-title">Actors</h4>
-							</div>
-							<div id="admin_actor" class="panel-collapse collapse">
-								<div class="panel-body"><ul class="list-group">
-									<goh-admin-obj v-for="i in actorList" :homeobj="i" modaltitle="Actor"></goh-admin-obj>
-								</ul></div>
-							</div>
-						</div>
-						<div class="panel panel-default">
-							<div class="panel-heading" data-toggle="collapse" data-parent="#admin_list" data-target="#admin_isensor">
-								<h4 class="panel-title">Image Sensors</h4>
-							</div>
-							<div id="admin_isensor" class="panel-collapse collapse">
-								<div class="panel-body"><ul class="list-group">
-									<goh-admin-obj v-for="i in imgSensorList" :homeobj="i" modaltitle="Image Sensors"></goh-admin-obj>
-								</ul></div>
-							</div>
-						</div>
-						<div class="panel panel-default">
-							<div class="panel-heading" data-toggle="collapse" data-parent="#admin_list" data-target="#admin_other">
-								<h4 class="panel-title">Users</h4>
-							</div>
-							<div id="admin_other" class="panel-collapse collapse">
-								<div class="panel-body"><ul class="list-group">
-									<goh-admin-obj v-for="i in userList" :homeobj="i" modaltitle="User"></goh-admin-obj>
-								</ul></div>
-							</div>
-						</div>
-						<br>
-						<button type="button" class="btn btn-default" onclick="vm.showMessage(vm.sensorList[0].Val)">TODO Ajouter</button>
+						<goh-admin-tab v-for="i in itemList" :objlist="objectListForItemId(i.IdItem)" ></goh-admin-tab>
 					</div>
 				</div>
 
@@ -119,9 +69,12 @@
 			</div>
 		</div>
 
-		<br>
+<!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
-		<goh-message :gohmsg=gohMsg v-if="gohMsg.message!=''"></goh-message>
+		<div id="gohMessage" class="panel panel-info hide" @click="$('#gohMessage').attr('class', 'hide' );">
+			<div id="gohMessageText" class="panel-heading"></div>
+		</div>',
+
 		<goh-isensor-show :imgsensorsrc=imgSensorSrc  v-if="imgSensorSrc!=''"></goh-isensor-show>
 
 	</div>
