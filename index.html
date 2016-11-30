@@ -9,7 +9,6 @@
 
 	<script src="js/jquery.min.js"></script>
 	<script src="js/jquery.json.min.js"></script>
-	<script src="js/vue.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
 
 	<script src="js/index.js"></script>
@@ -17,99 +16,60 @@
 
 <body class="gohome">
 
-<div id="gohome" class="container" style="width:100%;">
-	<div v-if="!vm.initLoadDone">
-		<script>
-			function checkStartup() { if (vm.initLoadDone) { vm.$forceUpdate(); } else { setTimeout(function() { checkStartup(); }, 300); } }
-			checkStartup();
-		</script>
-	</div>
-	<div v-else>
+	<div id="goh-message" class="panel panel-info hide" onclick="$('#goh-message').attr('class', 'hide' );"></div>
+
+
+	<div id="goh-header" class="mainheader" onclick="window.location.reload(true);" >FAILED !</div>
 
 <!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
-		<goh-header :user=currentUser></goh-header>
+	<div name="Tab Container">
+		<ul class="nav nav-tabs">
+			<li class="active"><a data-toggle="tab" class="blackfnt" href="#menu1">Acceuil</a></li>
+			<li><a data-toggle="tab" class="blackfnt" href="#menu2">Mesures</a></li>
+			<li><a data-toggle="tab" class="blackfnt" href="#menu3">Administration</a></li>
+		</ul>
 
-		<div name="Tab Container" style="width:100%;">
-			<ul class="nav nav-tabs">
-				<li class="active"><a data-toggle="tab" class="blackfnt" href="#menu1">Acceuil</a></li>
-				<li><a data-toggle="tab" class="blackfnt" href="#menu2">Mesures</a></li>
-				<li><a data-toggle="tab" class="blackfnt" href="#menu3">Administration</a></li>
-			</ul>
-
-			<div class="tab-content">
+		<div class="tab-content">
 
 <!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
-				<div id="menu1" class="tab-pane fade in active"><br>
-					<goh-actors v-for="i in actorList" :actor="i"></goh-actors>
-					<goh-isensor v-for="j in imgSensorList" :imgsensor="j"></goh-isensor>
+			<div id="menu1" class="tab-pane fade in active"><br>
+				<span id="goh-actors">goh-actors</span>
+				<span id="goh-isensor">goh-isensor</span>
+				<div id="imgsensor" class="imgsensor" onclick="hideImgSensorReading()">
+					<img id="imgsensorsrc" src="" class="imgsensor img-thumbnail"/>
+					<div id="imgsensortitle" class="imgsensortitle"></div>
 				</div>
+			</div>
 
 <!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
-				<div id="menu2" class="tab-pane fade">
-					<div class="table-responsive"><table class="table">
-					<thead><tr><th>Id</th><th>Nom</th><th>Valeur</th><th>Date</th></tr></thead>
-					<tbody><tr is="goh-sensors-row" v-for="i in vm.sensorList" :sensor="i" :readvalue="i.Val" :readdate="i.Ts"></tr>
-					</tbody></table></div> <!-- TODO ignore inactive sensor -->
-				</div>
+			<div id="menu2" class="tab-pane fade">
+				<div class="table-responsive"><table class="table">
+				<thead><tr><th>Id</th><th>Nom</th><th>Valeur</th><th>Date</th></tr></thead>
+				<tbody id="goh-sensor-row">
+				</tbody></table></div>
+			</div>
 
 <!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
-				<div id="menu3" class="tab-pane fade">
-					<br>
-					<div class="panel-group" id="admin_list">
-						<goh-admin-tab v-for="i in itemList" :objlist="objectListForItemId(i.IdItem)" ></goh-admin-tab>
-					</div>
-				</div>
+			<div id="menu3" class="tab-pane fade">
+				<br>
+				<div id="goh-admin-tab" class="panel-group"></div>
+			</div>
 
 <!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
 			</div>
-		</div>
+	</div>
 
 <!-- ---------------------------------------------------------------------------------------------------------------------------------- -->
 
-		<div id="gohMessage" class="panel panel-info hide" @click="$('#gohMessage').attr('class', 'hide' );">
-			<div id="gohMessageText" class="panel-heading"></div>
-		</div>',
-
-		<goh-isensor-show :imgsensorsrc=imgSensorSrc  v-if="imgSensorSrc!=''"></goh-isensor-show>
+	<div id="goh-admin-edit-object" class="hide"></div>
 
 	</div>
 </div>
-
-
-<!--
-
-<button type="button" class="btn btn-default" data-toggle="modal" data-target="#myModal">Open Msg</button>
-
-<div id="myModal" class="modal fade" role="dialog">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Confirmation</h4>
-      </div>
-      <div class="modal-body">
-        Some text in the modal
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal" onclick="alert('OK');">OK</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-		<i class="material-icons" style="font-size:60px;color:red;">computer</i>
-
-
-<div id="test" class="test">
-
-</div>
--->
 
 
 </body>

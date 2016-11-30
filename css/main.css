@@ -82,6 +82,7 @@ img.imgsensor {
 	position: absolute;
 	width: 100%;
 	max-width: 100%;
+	height: auto;
 	max-height: 100%;
 	bottom:0;
 	right:0;
@@ -90,6 +91,7 @@ img.imgsensor {
 
 div.imgsensor {
 	position: fixed;
+	display: none;
 	bottom: 6%;
 	left:2%;
 	width: 96%;
@@ -99,12 +101,10 @@ div.imgsensor {
 
 div.imgsensortitle {
 	position: absolute;
-	width: 96%%;
+	width: 96%;
 	bottom:4%;
 	left:2%;
-	height: 6%;
 	padding:5px;
-	text-align: left;
 	font-size: 2em;
 	color: white;
 }
